@@ -7,8 +7,8 @@
 #include <cstring>
 #include <cstdlib>
 
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
+const uint32_t WIDTH = 1366;
+const uint32_t HEIGHT = 768;
 
 const std::vector<const char*> validationLayers = {
     "VK_LAYER_KHRONOS_validation"
@@ -20,26 +20,32 @@ const bool enableValidationLayers = false;
 const bool enableValidationLayers = true;
 #endif
 
+//Debug Messenger Functions
 VkResult CreateDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
+    if (func != nullptr) { //function pointer
         return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
     }
     else {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
+
 }
 
 void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+    // destroys the debug messenger
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr) {
         func(instance, debugMessenger, pAllocator);
     }
+    
 }
 
+
+//defining the class
 class HelloTriangleApplication {
 public:
-    void run() {
+    void run() {//this is the entry point of the application
         initWindow();
         initVulkan();
         mainLoop();
@@ -52,44 +58,42 @@ private:
     VkInstance instance;
     VkDebugUtilsMessengerEXT debugMessenger;
 
-    void initWindow() {
+    void initWindow() {//this function initializes the glfw library
         glfwInit();
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);//do not create openGL context
 
-        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);//creates the window
     }
 
     void initVulkan() {
-        createInstance();
-        setupDebugMessenger();
+        createInstance();//this creates the vulkan instance
+        setupDebugMessenger();//sets up the Vulkan debug messenger if validation layers are enabled.
     }
 
-    void mainLoop() {
+    void mainLoop() {//main event loop, kepps running until an error or window is closed
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
         }
     }
 
     void cleanup() {
-        if (enableValidationLayers) {
+        if (enableValidationLayers) {//destroy the debug messenger if validation layers are enabled.
             DestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
         }
 
-        vkDestroyInstance(instance, nullptr);
-
-        glfwDestroyWindow(window);
-
-        glfwTerminate();
+        vkDestroyInstance(instance, nullptr);//Destroys the Vulkan instance.
+        glfwDestroyWindow(window);//Destroys the GLFW window.
+        glfwTerminate();// Cleans up the GLFW library.
     }
 
     void createInstance() {
-        if (enableValidationLayers && !checkValidationLayerSupport()) {
+        if (enableValidationLayers && !checkValidationLayerSupport()) {//Checks if the requested validation layers are available
             throw std::runtime_error("validation layers requested, but not available!");
         }
 
-        VkApplicationInfo appInfo{};
+        VkApplicationInfo appInfo{};//Contains application-specific information that can help optimize Vulkan
         appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pApplicationName = "Hello Triangle";
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -97,7 +101,7 @@ private:
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.apiVersion = VK_API_VERSION_1_0;
 
-        VkInstanceCreateInfo createInfo{};
+        VkInstanceCreateInfo createInfo{};//Holds information needed to create the Vulkan instance, including enabled extensions and validation layers.
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         createInfo.pApplicationInfo = &appInfo;
 
@@ -125,6 +129,7 @@ private:
     }
 
     void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo) {
+        //sets up the debug messenger creation info, specifying what kind of messages should trigger the callback and the callback function itself.
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -133,6 +138,7 @@ private:
     }
 
     void setupDebugMessenger() {
+        //Sets up the debug messenger if validation layers are enabled, using the creation info prepared earlier.
         if (!enableValidationLayers) return;
 
         VkDebugUtilsMessengerCreateInfoEXT createInfo;
@@ -144,6 +150,7 @@ private:
     }
 
     std::vector<const char*> getRequiredExtensions() {
+        //Retrieves the required extensions for interfacing with the windowing system (GLFW)
         uint32_t glfwExtensionCount = 0;
         const char** glfwExtensions;
         glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
@@ -158,11 +165,13 @@ private:
     }
 
     bool checkValidationLayerSupport() {
+        //verify whether all requested Vulkan validation layers are available on the system
         uint32_t layerCount;
         vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
 
         std::vector<VkLayerProperties> availableLayers(layerCount);
         vkEnumerateInstanceLayerProperties(&layerCount, availableLayers.data());
+
 
         for (const char* layerName : validationLayers) {
             bool layerFound = false;
@@ -183,6 +192,7 @@ private:
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
+        //callback function that will be triggered by the debug messenger when a validation message is generated prints the message to the standard error stream
         std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
 
         return VK_FALSE;
